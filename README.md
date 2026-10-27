@@ -1,4 +1,4 @@
-# excalidraw-diagram
+# claude-excalidraw-diagram
 
 A Claude Code plugin for diagrams you can open and edit at excalidraw.com. Claude writes a short Python script, the bundled generator turns it into an `.excalidraw` file, and a validator checks it before you see it.
 
@@ -24,8 +24,10 @@ The skill also triggers on its own when you ask Claude to diagram or map somethi
 ## Install
 
 ```
-claude plugin marketplace add <this repo's GitHub URL or local path>
+claude plugin marketplace add elliotboney/claude-excalidraw-diagram
 claude plugin install excalidraw-diagram@excalidraw-diagram
 ```
+
+Or inside Claude Code: `/plugin marketplace add elliotboney/claude-excalidraw-diagram`, then `/plugin install excalidraw-diagram@excalidraw-diagram`.
 
 Needs Python 3. `render` needs the Playwright MCP server.
