@@ -6,5 +6,6 @@
   "author": {
     "name": "Elliot Boney"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "icon": "./logo.png"
 }
