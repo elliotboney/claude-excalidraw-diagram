@@ -1,0 +1,50 @@
+{
+  "skill_name": "excalidraw-diagram",
+  "evals": [
+    {
+      "id": 0,
+      "name": "webapp-topology",
+      "prompt": "Make me an editable excalidraw diagram of a standard web app: users hit CloudFront, which goes to an ALB (load balancer), which fans out to 3 EC2 API servers, and those read/write a Postgres RDS plus an ElastiCache Redis. I want to be able to drag the boxes around afterward.",
+      "expected_output": "A .excalidraw file with boxes for users/CloudFront/ALB/3 API servers/Postgres/Redis and bound arrows showing the flow; opens in excalidraw.com and boxes stay connected when dragged.",
+      "files": [],
+      "assertions": [
+        {"text": "Output is a .excalidraw file that parses as JSON with top-level type 'excalidraw'", "kind": "script"},
+        {"text": "Contains at least 6 rectangles and at least 5 arrows", "kind": "script"},
+        {"text": "Every arrow is two-way bound (startBinding+endBinding to existing boxes, reciprocal in boundElements)", "kind": "script"},
+        {"text": "No arrow endpoint sits inside its bound box (won't detach on drag)", "kind": "script"},
+        {"text": "Box text covers the named components: CloudFront, ALB/load balancer, API, Postgres, Redis", "kind": "script"},
+        {"text": "All text elements use a single fontFamily", "kind": "script"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "data-pipeline",
+      "prompt": "Can you draw our data pipeline in excalidraw so I can edit it? Events come in through Kafka, Flink processes them and writes parquet to S3. Separately, Airflow kicks off nightly dbt runs that load Snowflake, and Snowflake feeds a Looker dashboard.",
+      "expected_output": "A .excalidraw file mapping Kafka->Flink->S3 and Airflow->dbt->Snowflake->Looker with bound arrows; editable.",
+      "files": [],
+      "assertions": [
+        {"text": "Output is a .excalidraw file that parses as JSON with top-level type 'excalidraw'", "kind": "script"},
+        {"text": "Contains at least 6 rectangles and at least 5 arrows", "kind": "script"},
+        {"text": "Every arrow is two-way bound (startBinding+endBinding to existing boxes, reciprocal in boundElements)", "kind": "script"},
+        {"text": "No arrow endpoint sits inside its bound box (won't detach on drag)", "kind": "script"},
+        {"text": "Box text covers: Kafka, Flink, S3, Airflow, dbt, Snowflake, Looker", "kind": "script"},
+        {"text": "All text elements use a single fontFamily", "kind": "script"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "microservices-flow",
+      "prompt": "I sketched our backend on a whiteboard, turn it into an excalidraw file: an API gateway routes to an auth service, a user service, and a billing service. Auth and user both read the main Postgres. Billing calls the Stripe API and also writes to Postgres.",
+      "expected_output": "A .excalidraw file: API gateway -> auth/user/billing; auth+user -> Postgres; billing -> Stripe and Postgres; bound arrows, editable.",
+      "files": [],
+      "assertions": [
+        {"text": "Output is a .excalidraw file that parses as JSON with top-level type 'excalidraw'", "kind": "script"},
+        {"text": "Contains at least 6 rectangles and at least 6 arrows", "kind": "script"},
+        {"text": "Every arrow is two-way bound (startBinding+endBinding to existing boxes, reciprocal in boundElements)", "kind": "script"},
+        {"text": "No arrow endpoint sits inside its bound box (won't detach on drag)", "kind": "script"},
+        {"text": "Box text covers: API gateway, auth, user, billing, Postgres, Stripe", "kind": "script"},
+        {"text": "All text elements use a single fontFamily", "kind": "script"}
+      ]
+    }
+  ]
+}

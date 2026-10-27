@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "excalidraw-diagram",
+  "description": "Editable Excalidraw diagrams generated from code.",
+  "owner": {
+    "name": "Elliot Boney"
+  },
+  "plugins": [
+    {
+      "name": "excalidraw-diagram",
+      "description": "Editable Excalidraw diagrams: bound text, snapped arrows, validator, slash commands.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

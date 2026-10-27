@@ -1,0 +1,10 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "excalidraw-diagram",
+  "version": "0.2.0",
+  "description": "Editable Excalidraw diagrams from code: bound text, snapped arrows, one lane per arrow, title + notes boxes, a validator, and slash commands to draw, check, render, and learn from hand edits.",
+  "author": {
+    "name": "Elliot Boney"
+  },
+  "license": "MIT"
+}
