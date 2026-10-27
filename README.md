@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.png" alt="claude-excalidraw-diagram logo" width="240"></p>
+
 # claude-excalidraw-diagram
 
 A Claude Code plugin for diagrams you can open and edit at excalidraw.com. Claude writes a short Python script, the bundled generator turns it into an `.excalidraw` file, and a validator checks it before you see it.
