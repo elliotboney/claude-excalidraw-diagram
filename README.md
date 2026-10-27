@@ -2,73 +2,81 @@
 
 # claude-excalidraw-diagram
 
-A Claude Code plugin for diagrams you can open and edit at excalidraw.com. Claude writes a short Python script, the bundled generator turns it into an `.excalidraw` file, and a validator checks it before you see it.
+A Claude Code plugin that makes Excalidraw diagrams you can actually open and edit at excalidraw.com. Claude writes a little Python script, the generator turns it into an `.excalidraw` file, and a validator yells about anything broken before you ever see it.
 
-## Why this exists
+## Why I built this
 
-A diagram that looks right in a screenshot can still fall apart the moment you drag a box. Generated Excalidraw files tend to fail in the same few ways: text that wraps one letter per line, labels that float next to arrows instead of riding on them, arrows that look attached but detach on drag, and fan-outs that tangle into a hairball. Every rule below came from a real diagram that broke one of these ways. The fix was made by hand in the app, then the saved JSON was diffed against the generated one, and the difference became a rule in the generator and a check in the validator. `/excalidraw-diagram:learn` runs that same loop on your own hand fixes.
+I wanted Claude to draw me diagrams I could tweak afterward. Mermaid wasn't cutting it, so I had it write Excalidraw files instead. They looked fine in a screenshot. Then I'd drag a box and the whole thing fell apart.
+
+Text wrapped one letter per line. Labels floated next to arrows instead of riding on them. Arrows *looked* attached but weren't, so they stayed behind when the box moved. And anything with a fan-out turned into a hairball.
+
+So I fixed each diagram by hand in the app, had Claude diff my saved file against what it generated, and turned every difference into a rule in the generator and a check in the validator. That loop is baked in now as `/excalidraw-diagram:learn`. Fix one of yours by hand, run it, and the skill picks up your style too.
 
 ## The rules
 
-**Editable first.** These three are what keep a diagram intact when someone edits it.
+### Make it editable first
 
-1. **Text lives in the shape.** A box's label is bound to the box (`containerId`), so it moves and edits with it. No text box parked on top of a rectangle.
-2. **Labels live on the arrow.** An arrow's label is bound to the arrow and rides along its path when the arrow re-routes. You can drag it along the arrow in the app.
-3. **Arrows snap to the box.** Both ends carry a `fixedPoint` binding on the facing side, about 6 px outside it, which is exactly what the app writes when you drop an arrow on a shape. The binding is two-way. Align two boxes by their middles and the arrow between them comes out level.
+If these three are wrong, nothing else matters, cause the diagram breaks the first time someone touches it.
 
-**Arrows that flow.**
+1. **Text goes IN the shape.** The label is bound to the box, so it moves and edits with it. No text box just sitting on top of a rectangle.
+2. **Labels go ON the arrow.** Bound to the arrow, so they ride along when it re-routes. You can drag a label along its arrow in the app, too.
+3. **Arrows snap to the box.** Both ends get a `fixedPoint` binding on the side they face, about 6 px out, which is exactly what the app writes when you drop an arrow on a shape yourself. My test for this one: align two boxes by their middles, and the arrow between them should go dead level. If it doesn't, it wasn't really snapped.
 
-- **Ports follow the direction, not the angle.** If the target sits to the right, the arrow leaves the right side and enters the left side, however far up or down the target is. That is the rule layered layout engines like ELK use.
-- **Spread ports.** When several arrows use one side of a box, their ends spread along it, ordered by where the other end sits, so they never cross at the box. An arrow to a middle-aligned box keeps the center and stays straight.
-- **One lane per arrow.** Each elbow arrow gets its own vertical segment in the gap between columns, pinned with `fixedSegments` so the app's router keeps it. No merged trunk where you cannot tell which line goes where. Lane order is searched to minimize crossings and legs lying on top of each other.
-- **Room for lanes.** 120 to 170 px between columns. The generator warns when lanes are squeezed.
-- **Near-level means level.** An arrow within 12 px of level is snapped straight.
+### Make the arrows flow
 
-**Layout.**
+- **Ports follow the direction, not the angle.** If the target is to the right, the arrow leaves the right side and comes in the left side, even if the target is way up or way down. Same rule the big layout engines use.
+- **Spread the ports out.** When a bunch of arrows share one side of a box, they spread along it, ordered by where they're headed, so they don't cross right at the box. The one going straight across keeps the middle.
+- **Every arrow gets its own lane.** I originally had them all merge into one trunk, and you couldn't tell which line went where. Now each one gets its own vertical segment between columns, pinned so the app doesn't reroute it. Claude shuffles the lane order to keep crossings down.
+- **Leave room for the lanes.** 120 to 170 px between columns. The generator complains if you squeeze them.
+- **Close to level is level.** Anything within 12 px of straight just gets snapped straight.
 
-- **Crossings first.** Order boxes within a column so connected boxes sit near each other.
-- **Columns, not coordinates.** One column per stage, one width, a fixed gap. Left to right for a process, top to bottom for a hierarchy.
-- **Labels by the source**, on the first leg, one or two words.
+### Lay it out
 
-**Text.**
+- **Kill crossings first.** It's the one thing that's actually been measured to hurt (more below). Put connected boxes near each other in their column.
+- **Columns, not coordinates.** One column per stage, same width, same gap. Left to right for a process, top to bottom for a hierarchy.
+- **Labels sit by where the arrow starts.** One or two words.
 
-- **Nunito everywhere**, boxes, labels, titles.
-- **Title + notes boxes.** When a box names a thing and then describes it, the name is a 20 px title and the detail sits under it in 14 px muted text. Prose callouts stay a single block of text.
-- **Real text widths.** A width of 0 makes excalidraw.com wrap one character per line, so every text carries a measured width and the generator warns when it will not fit its box.
+### Text
 
-**Meaning, not decoration.** Color by role (source, process, emphasis, output, note), at most a handful of colors, never color alone: dashed strokes mark guesses and notes.
+- **Nunito for everything.** Boxes, labels, titles.
+- **Title + notes boxes.** When a box is a name plus some detail, the name is big and the detail sits under it smaller and muted. Way easier to scan than one blob of text. Actual notes and callouts stay one block.
+- **Real text widths.** A width of 0 makes excalidraw.com wrap every character onto its own line. Ask me how I know.
 
-## The research behind it
+### Color means something
 
-The layout rules are ranked by what has been measured to help people read diagrams, not by taste. Full write-up with links: [`references/layout-rules.md`](skills/excalidraw-diagram/references/layout-rules.md).
+Color by role (input, process, the main hub, output, note), keep it to a handful, and never rely on color alone. Dashed means a guess or a note.
 
-- **Edge crossings hurt reading the most.** Purchase (1997) found crossings by far the most important aesthetic. Bends and symmetry mattered less. Angles and grid snapping had no significant effect.
-- **Continuity is next.** Ware et al. (2002): after path length, a path the eye can follow straight and the number of crossings are the biggest costs, and they trade off. Do not bend a straight path just to dodge one crossing.
-- **Layered layout engines agree on the mechanics.** Graphviz dot, Eclipse ELK, and dagre all put each stage in a layer, align connected nodes, assign ports by flow direction, and reserve space between layers for labels. The defaults here are borrowed from them and sized for hand-editable diagrams.
-- **Flowchart and architecture conventions** (ISO 5807, BPMN, C4): one dominant direction, the happy path on one straight line, one level of abstraction per diagram, a label on every line saying what flows.
-- **Excalidraw's own source** settles the file details: how bindings and `fixedPoint`s are stored, how the elbow router picks an exit side, how labels are positioned along a path, and how big the cut-out behind a label is.
+## The research
+
+I didn't want this to be just my taste, so I had Claude dig into what's actually been tested. The short version is below, and the full write-up with links is in [`references/layout-rules.md`](skills/excalidraw-diagram/references/layout-rules.md).
+
+- **Crossing lines are the worst thing you can do to a diagram.** Purchase (1997) found crossings were by far the biggest hit to understanding. Bends and symmetry mattered less, and stuff like angles and grid snapping didn't move the needle at all.
+- **Next is being able to follow a line with your eye.** Ware and others (2002) found that straight, continuous paths and crossings are the two biggest costs after path length, and they trade off. So don't bend a straight line just to dodge one crossing.
+- **The layout engines all pretty much agree.** Graphviz, Eclipse ELK, and dagre all put each stage in a layer, line up connected nodes, pick ports by flow direction, and leave room between layers for labels. I borrowed their defaults and sized them for diagrams a person is going to edit.
+- **Flowchart and architecture standards** (ISO 5807, BPMN, C4) say the same boring, correct stuff: one main direction, the happy path on one straight line, one level of detail per diagram, and a label on every line saying what's flowing.
+- **Excalidraw's own source code** settled the file details: how bindings get stored, how the elbow router picks a side, how labels sit along a path, and how big the gap behind a label is.
 
 ## What the validator checks
 
-`scripts/validate.py` runs after every build. Problems are must-fix, warnings are worth a look.
+`scripts/validate.py` runs after every build. Problems get fixed. Warnings are worth a look.
 
-- Every arrow end is bound, two-way, with a `fixedPoint`, and sits on the box edge.
-- No text floats over a box unless it is grouped with it, and no text has zero width.
-- No arrow passes through a box it is not connected to.
-- Arrows a few px off level, with the boxes to align.
-- Crossings and overlapping arrow legs, naming the arrows involved.
-- Any font other than Nunito.
+- Every arrow end is bound both ways, has a `fixedPoint`, and sits on the box edge.
+- No text floating over a box unless it's grouped with it, and no text with zero width.
+- No arrow running through a box it isn't connected to.
+- Arrows that are a few px off level, and which boxes to align to fix it.
+- Crossings and arrows lying on top of each other, by name.
+- Any font that isn't Nunito.
 
 ## Commands
 
-| Command | Does |
+| Command | What it does |
 |---|---|
-| `/excalidraw-diagram:diagram <description>` | Plans, generates, validates a new diagram, and keeps the script |
-| `/excalidraw-diagram:validate <file>` | Checks bindings, floating text, crossings, shared lanes, fonts |
-| `/excalidraw-diagram:render <file>` | Opens the file in excalidraw.com (Playwright) and reviews a screenshot |
-| `/excalidraw-diagram:learn <generated> <hand-fixed>` | Diffs your hand fix against the generated file and folds the rules into the skill |
+| `/excalidraw-diagram:diagram <description>` | Plans, generates, and validates a new diagram, and keeps the script so you can change it later |
+| `/excalidraw-diagram:validate <file>` | Checks bindings, floating text, crossings, shared lanes, and fonts |
+| `/excalidraw-diagram:render <file>` | Opens the file in excalidraw.com (Playwright) and looks at a screenshot |
+| `/excalidraw-diagram:learn <generated> <hand-fixed>` | Diffs your hand fix against the generated file and teaches the skill your rules |
 
-The skill also triggers on its own when you ask Claude to diagram or map something.
+You don't have to use the commands. The skill kicks in on its own when you ask Claude to diagram or map something.
 
 ## Install
 
@@ -79,4 +87,4 @@ claude plugin install excalidraw-diagram@excalidraw-diagram
 
 Or inside Claude Code: `/plugin marketplace add elliotboney/claude-excalidraw-diagram`, then `/plugin install excalidraw-diagram@excalidraw-diagram`.
 
-Needs Python 3. `render` needs the Playwright MCP server.
+You'll need Python 3. `render` needs the Playwright MCP server.
